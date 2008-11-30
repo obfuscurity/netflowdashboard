@@ -1,0 +1,245 @@
+<html>
+<head>
+<title></title>
+<TMPL_INCLUDE name="admin.css">
+<TMPL_INCLUDE name="admin.js">
+</head>
+<body>
+
+<!-- Start wrapper window -->
+<div id="wrp">
+
+<!-- Start header -->
+<div id="header">
+	<ul>
+		<li class="bold">NetFlow</li>
+		<li>Dashboard</li>
+	</ul>
+</div>
+<!-- End header -->
+
+<!--  Start main window -->
+
+<TMPL_IF name="devices_loop">
+<div id="devices">
+<table width="100%" style="border-width: 1px; border-style: groove;">
+	<tr>
+		<th style="background-color: #62a262; color: white;">Admin :: Devices &nbsp;&nbsp;
+			[<a class="plus" href="#" onclick="showPopupAddDevice(event);" alt="Add Device">+</a>]
+		</th>
+	</tr>
+	<tr>
+		<td>
+			<div id="popupAddDevice">
+				<div id="closePopup">
+					<a class="plus" href="#" onclick="hidePopupAddDevice(event);">x</a>
+				</div>
+				<form>
+					<h3>Add Device</h3>
+					<table width="100%">
+						<tr><td>Address:</td><td><input name="d"></td></tr>
+						<tr><td>Name:</td><td><input name="n"></td></tr>
+						<tr><td>Description:</td><td><input name="c"></td>
+						<td><input type="hidden" name="v" value="add_device">
+						<input type="submit" value="Add" onclick="hidePopupAddDevice(event);"></td></tr>
+					</table>
+				</form>
+			</div>
+			<TMPL_LOOP name="devices_loop">
+				<div id="popupModifyDevice">
+					<div id="closePopup">
+						<a class="plus" href="#" onclick="hidePopupModifyDevice(event);">x</a>
+					</div>
+					<form>
+						<h3>Modify Device</h3>
+						<table width="100%">
+							<tr><td>Address:</td><td><input name="d" value="<TMPL_VAR name="device_addr">"></td></tr>
+							<tr><td>Name:</td><td><input name="n" value="<TMPL_VAR name="name">"></td></tr>
+							<tr><td>Description:</td><td><input name="c" value="<TMPL_VAR name="description">"></td>
+							<td><input type="hidden" name="v" value="modify_device">
+							<input type="submit" value="Modify" onclick="hidePopupModifyDevice(event);"></td></tr>
+						</table>
+					</form>
+				</div>
+				<div id="popupDeleteDevice">
+					<div id="closePopup">
+						<a class="plus" href="#" onclick="hidePopupDeleteDevice(event);">x</a>
+					</div>
+					<form>
+						<div style="text-align: center;">
+						<h3>Delete Device</h3>
+						<p>Are you sure you wish to delete agent <TMPL_VAR name="device_addr">?</p>
+						<input type="hidden" name="d" value="<TMPL_VAR name="device_addr">">
+						<input type="hidden" name="v" value="delete_device">
+						<p style="padding: 10px;"><input type="submit" value="Confirm" onclick="hidePopupDeleteDevice(event);"></p>
+						</div>
+					</form>
+				</div>
+			</TMPL_LOOP>
+			<table width="100%">
+				<tr>
+					<th>Address</th>
+					<th>Name</th>
+					<th>Description</th>
+				</tr>
+				<TMPL_LOOP name="devices_loop">
+				<tr>
+					<td style="margin-left: 5px; margin-right: 5px;">
+						<a href="#" onclick="showPopupModifyDevice(event);">?</a>
+						<a href="#" onclick="showPopupDeleteDevice(event);">X</a>
+						&nbsp; <TMPL_VAR name="device_addr">
+					</td>
+					<!--td style="padding-left: 5px;"><TMPL_VAR name="device_addr"></td-->
+					<td style="padding-left: 5px;"><TMPL_VAR name="name"></td>
+					<td style="padding-left: 5px;"><TMPL_VAR name="description"></td>
+				</tr>
+				</TMPL_LOOP>
+			</table>
+		</td>
+	</tr>
+</table>
+</div>
+</TMPL_IF>
+
+<TMPL_IF name="groups_loop">
+<div id="device_groups">
+<table width="100%" style="border-width: 2px; border-style: groove;">
+	<tr>
+		<th style="background-color: #007799; color: white;">Admin :: Groups &nbsp;&nbsp;
+			[<a class="plus" href="#" onclick="showPopupAddGroup(event);" alt="Add Group">+</a>]
+		</th>
+	</tr>
+	<tr>
+		<td>
+			<div id="popupAddGroup">
+				<div id="closePopup">
+					<a class="plus" href="#" onclick="hidePopupAddGroup(event);">x</a>
+				</div>
+				<form>
+					<h3>Add Group</h3>
+					<table width="100%">
+						<tr><td>Name:</td><td><input name="n"></td></tr>
+						<tr><td>Description:</td><td><input name="c"></td>
+						<td><input type="hidden" name="v" value="add_group">
+						<input type="submit" value="Add" onclick="hidePopupAddGroup(event);"></td></tr>
+					</table>
+				</form>
+			</div>
+			<TMPL_LOOP name="groups_loop">
+				<div id="popupModifyGroup">
+					<div id="closePopup">
+						<a class="plus" href="#" onclick="hidePopupModifyGroup(event);">x</a>
+					</div>
+					<form>
+						<h3>Modify Group</h3>
+						<table width="100%">
+							<tr><td>Name:</td><td><input name="n" value="<TMPL_VAR name="name">"></td></tr>
+							<tr><td>Description:</td><td><input name="c" value="<TMPL_VAR name="description">"></td>
+							<td><input type="hidden" name="gid" value="<TMPL_VAR
+name="id">">
+							<td><input type="hidden" name="v" value="modify_group">
+							<input type="submit" value="Modify" onclick="hidePopupModifyGroup(event);"></td></tr>
+						</table>
+					</form>
+				</div>
+				<div id="popupDeleteGroup">
+					<div id="closePopup">
+						<a class="plus" href="#" onclick="hidePopupDeleteGroup(event);">x</a>
+					</div>
+					<form>
+						<div style="text-align: center;">
+						<h3>Delete Group</h3>
+						<p>Are you sure you wish to delete group <TMPL_VAR name="name">?</p>
+						<input type="hidden" name="gid" value="<TMPL_VAR name="id">">
+						<input type="hidden" name="v" value="delete_group">
+						<p style="padding: 10px;"><input type="submit" value="Confirm" onclick="hidePopupDeleteGroup(event);"></p>
+						</div>
+					</form>
+				</div>
+				<div id="popupAddGroupMember">
+					<div id="closePopup">
+						<a class="plus" href="#" onclick="hidePopupAddGroupMember(event);">x</a>
+					</div>
+					<form>
+						<div style="text-align: center;">
+						<h3>Add Group Member</h3>
+						<select name="d">
+						<TMPL_LOOP name="groups_members_loop">
+							<option value="<TMPL_VAR name="device_addr">">
+								<TMPL_VAR name="member_name">
+							</option>
+						</TMPL_LOOP>
+						</select>
+						<input type="hidden" name="gid" value="<TMPL_VAR name="id">">
+						<input type="hidden" name="v" value="add_group_member">
+						<input type="submit" value="Add" onclick="hidePopupAddGroupMember(event);">
+						</div>
+					</form>
+				</div>
+				<TMPL_LOOP name="groups_members_loop">
+					<div id="popupDeleteGroupMember">
+						<div id="closePopup">
+							<a class="plus" href="#" onclick="hidePopupDeleteGroupMember(event);">x</a>
+						</div>
+						<form>
+							<div style="text-align: center;">
+							<h3>Delete Group Member</h3>
+							<p>Are you sure you wish to delete group member <TMPL_VAR name="member_name">?</p>
+							<input type="hidden" name="gid" value="<TMPL_VAR name="id">">
+							<input type="hidden" name="d" value="<TMPL_VAR name="device_addr">">
+							<input type="hidden" name="v" value="delete_group_member">
+							<p style="padding: 10px;"><input type="submit" value="Confirm" onclick="hidePopupDeleteGroupMember(event);"></p>
+							</div>
+						</form>
+					</div>
+				</TMPL_LOOP>
+			</TMPL_LOOP>
+			<table width="100%">
+				<tr>
+					<th>Name</th>
+					<th>Members</th>
+					<th>Description</th>
+				</tr>
+				<TMPL_LOOP name="groups_loop">
+				<tr>
+					<!--td style="padding-left: 5px;"><TMPL_VAR name="id"></td-->
+					<td style="margin-left: 5px; margin-right: 5px;">
+						<a href="#" onclick="showPopupModifyGroup(event);">?</a>
+						<a href="#" onclick="showPopupDeleteGroup(event);">X</a>
+						<a href="#" onclick="showPopupAddGroupMember(event);">+</a>
+						&nbsp; <TMPL_VAR name="name">
+					</td>
+					<td style="padding: 5px;">
+					<TMPL_LOOP name="groups_members_loop">
+						<a href="#" onclick="showPopupDeleteGroupMember(event);">X</a>
+						&nbsp; <TMPL_VAR name="member_name"><br>
+					</TMPL_LOOP>
+					</td>
+					<td style="padding-left: 5px;"><TMPL_VAR name="description"></td>
+				</tr>
+				</TMPL_LOOP>
+			</table>
+		</td>
+	</tr>
+</table>
+</div>
+</TMPL_IF>
+
+<!--  End Main Window -->
+
+<div id="footer">
+<table width="100%">
+	<tr>
+		<td style="text-align: center; font-size: smaller;">
+			&copy; 2005 - 2008 <span style="font-weight: bold;">DixonGroup</span>&nbsp;Consulting
+		</td>
+	</tr>
+</table>
+</div>
+
+<pre><TMPL_VAR name="dump"></pre>
+
+</div>
+
+</body>
+</html>

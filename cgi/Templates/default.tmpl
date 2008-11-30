@@ -1,0 +1,55 @@
+<h2 class="title"><TMPL_VAR name="subtitle"></h2>
+
+<div id="captions">
+	<ul>
+		<li style="width: 20%;">Routers</li>
+		<li style="width: 8%;"><span>Intf</span></li>
+		<li style="width: 24%;"><span>Traffic In</span></li>
+		<li style="width: 24%;"><span>Traffic Out</span></li>
+		<li style="width: 24%;"><span>Details</span></li>
+	</ul>
+</div>
+
+<div id="Table" class="summary">
+	<TMPL_LOOP name="devices_loop">
+	<div class="wrapmain">
+		<div class="cell-wrap cells-1 cell-first devices">
+			<ul>
+				<li>
+					<TMPL_VAR name="hostname"><br>
+					<TMPL_VAR name="packets">&nbsp;Packets
+				</li>
+			</ul>
+		</div>
+
+		<div class="cell-wrap cells-4 interfaces">
+			<ul>
+			<TMPL_LOOP name="interfaces">
+				<li class="index"><TMPL_VAR name="index"></li>
+				<li class="bar-graph">&nbsp;<TMPL_VAR name="in_bps_human">
+					<span class="util">
+						<div class="util_fill_<TMPL_VAR name="in_utz_color">" style="width: <TMPL_VAR name="in_utz">%;">
+						</div>
+					</span>
+				</li>
+				<li class="util_pct"><TMPL_VAR name="in_utz">% Util.  </li>
+				<li class="bar-graph">&nbsp;<TMPL_VAR name="out_bps_human">
+					<span class="util">
+						<div class="util_fill_<TMPL_VAR name="out_utz_color">" style="width: <TMPL_VAR name="out_utz">%;">
+						</div>
+					</span>
+				</li>
+				<li class="util_pct"><TMPL_VAR name="out_utz">% Util.</li>
+				<li class="links">
+					<a href="?t=<TMPL_VAR name="time">&v=services&d=<TMPL_VAR name="agent_addr">&i=<TMPL_VAR name="index">">Services</a>
+					<a href="?t=<TMPL_VAR name="time">&v=hosts&d=<TMPL_VAR name="agent_addr">&i=<TMPL_VAR name="index">&host_side=src">Sources</a>
+					<a href="?t=<TMPL_VAR name="time">&v=hosts&d=<TMPL_VAR name="agent_addr">&i=<TMPL_VAR name="index">&host_side=dst">Dests</a>
+					<a href="?t=<TMPL_VAR name="time">&v=connections&d=<TMPL_VAR name="agent_addr">&i=<TMPL_VAR name="index">">Conns</a>
+				</li>
+			</TMPL_LOOP>
+			<div class="spacer"></div>
+			</ul>
+		</div>
+	</div>
+	</TMPL_LOOP>
+</div>

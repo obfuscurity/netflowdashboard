@@ -1,0 +1,114 @@
+<div class="clearing"></div>
+<h2 class="title"><TMPL_VAR name="subtitle"> - Agent <TMPL_VAR name="agent_addr"></h2>
+
+<div id="captions">
+	<ul>
+		<li class="endpoints">Endpoints</li>
+		<li class="session">Session
+			<!-- Pager for Flows -->
+			<TMPL_IF name="pager">
+			<span class="pager">
+			<TMPL_IF name="page_first">
+				<a class="pager" href="?v=flowdetail&sa=<TMPL_VAR name="src_addr">&sp=<TMPL_VAR name="src_port">&da=<TMPL_VAR name="dst_addr">&dp=<TMPL_VAR name="dst_port">&f=<TMPL_VAR name="page_first">">|&lt;</a>&nbsp;
+			<TMPL_ELSE>
+				<span class="pager_disabled">|&lt;&nbsp;</span>
+			</TMPL_IF>
+			<TMPL_IF name="page_minus">
+				<a class="pager" href="?v=flowdetail&sa=<TMPL_VAR name="src_addr">&sp=<TMPL_VAR name="src_port">&da=<TMPL_VAR name="dst_addr">&dp=<TMPL_VAR name="dst_port">&f=<TMPL_VAR name="page_minus">">&lt;</a>&nbsp;
+			<TMPL_ELSE>
+				<span class="pager_disabled">&lt;&nbsp;</span>
+			</TMPL_IF>
+			<TMPL_VAR name="page_current">&nbsp;
+			<TMPL_IF name="page_plus">
+				<a class="pager" href="?v=flowdetail&sa=<TMPL_VAR name="src_addr">&sp=<TMPL_VAR name="src_port">&da=<TMPL_VAR name="dst_addr">&dp=<TMPL_VAR name="dst_port">&f=<TMPL_VAR name="page_plus">">&gt;</a>&nbsp;
+			<TMPL_ELSE>
+				<span class="pager_disabled">&gt;&nbsp;</span>
+			</TMPL_IF>
+			<TMPL_IF name="page_last">
+				<a class="pager" href="?v=flowdetail&sa=<TMPL_VAR name="src_addr">&sp=<TMPL_VAR name="src_port">&da=<TMPL_VAR name="dst_addr">&dp=<TMPL_VAR name="dst_port">&f=<TMPL_VAR name="page_last">">&gt;|</a>
+			<TMPL_ELSE>
+				<span class="pager_disabled">&gt;|</span>
+			</TMPL_IF>
+			</span>
+			</TMPL_IF>
+			<!-- End Pager -->
+		</li>
+		<li class="agent"> Agent</li>
+	</ul>
+</div>
+
+<div class="wrapmain">
+<ul class="flowdetail">
+	<li class="flowdetail">
+		<table class="endpoints">
+			<tr>
+				<td class="left">Src Address:</td>
+				<td class="right"><TMPL_VAR name="src_addr"></td>
+			</tr>
+			<tr>
+				<td class="left">Src Port:</td>
+				<td class="right"><TMPL_VAR name="src_port"></td>
+			</tr>
+			<tr>
+				<td class="left">Dst Address:</td>
+				<td class="right"><TMPL_VAR name="dst_addr"></td>
+			</tr>
+			<tr>
+				<td class="left">Dst Port:</td>
+				<td class="right"><TMPL_VAR name="dst_port"></td>
+			</tr>
+		</table>
+	</li>
+
+	<li class="flowdetail">
+		<table class="session">
+			<tr>
+				<td class="left">Protocol:</span.</td>
+				<td class="right"><TMPL_VAR name="protocol"></td>
+			</tr>
+			<tr>
+				<td class="left">Num Packets:</td>
+				<td class="right"><TMPL_VAR name="flow_packets"></td>
+			</tr>
+			<tr>
+				<td class="left">Num Octets:</td>
+				<td class="right"><TMPL_VAR name="flow_octets"></td>
+			</tr>
+			<tr>
+				<td class="left">Flow Start:</td>
+				<td class="right"><TMPL_VAR name="flow_start"></td>
+			</tr>
+			<tr>
+				<td class="left">Flow End:</td>
+				<td class="right"><TMPL_VAR name="flow_finish"></td>
+			</tr>
+			<tr>
+				<td class="left">Timestamp:</td>
+				<td class="right"><TMPL_VAR name="timestamp"></td>
+			</tr>
+		</table>
+	</li>
+
+	<li class="flowdetail">
+		<table class="agent">
+			<tr>
+				<td class="left">Address:</td>
+				<td class="right"><TMPL_VAR name="agent_addr"></td>
+			</tr>
+			<tr>
+				<td class="left">NetFlow Ver.:</td>
+				<td class="right"><TMPL_VAR name="netflow_version"></td>
+			</tr>
+			<tr>
+				<td class="left">Uptime (ms):</td>
+				<td class="right"><TMPL_VAR name="sys_uptime_ms"></td>
+			</tr>
+			<tr>
+				<td class="left">CRC:</td>
+				<td class="right"><TMPL_VAR name="crc"></td>
+			</tr>
+		</table>
+	</li>
+
+</ul>
+</div>

@@ -1,0 +1,130 @@
+#connections {
+	position: relative;
+	float: right;
+	width: 100%;
+	padding-top: 15px;
+}
+#connections ul {
+	position: relative;
+	float: left;
+	width: 100%;
+	padding: 0;
+	margin: 0;
+}
+#connections li {
+	position: relative;
+	float: left;
+	font-size: 70%;
+	padding: 0 0 5px 0;
+	text-align: center;
+	display: block;
+	border: 0px solid black;
+}
+#connections li.srcaddr, #captions li.srcaddr {
+	width: 15%;
+}
+#connections li.srcport, #captions li.srcport {
+	width: 10%;
+}
+#connections li.dstaddr, #captions li.dstaddr {
+	width: 15%;
+}
+#connections li.dstport, #captions li.dstport {
+	width: 10%;
+}
+#connections li.protocol, #captions li.protocol {
+	width: 10%;
+}
+#connections li.bytes, #captions li.bytes {
+	width: 15%;
+}
+#connections li.trafficall, #captions li.trafficall {
+<TMPL_IF name="msie">
+	width: 24%;
+<TMPL_ELSE>
+	width: 25%;
+</TMPL_IF>
+}
+#connections span {
+	margin-left: 10%;
+	margin-right: 5%;
+	width: 60%;
+}
+#connections span div {
+	position: relative;
+	float: left;
+}
+#utz span {
+	width: 20%;
+}
+#util {
+	position: relative;
+	float: left;
+	width: 80px;
+	height: 10px;
+	border: 1px solid silver;
+<TMPL_IF name="safari">
+	margin: 0 0 0 0;
+</TMPL_IF>
+<TMPL_IF name="msie">
+	margin: 0 0 0 0;
+</TMPL_IF>
+<TMPL_IF name="a_working_browser">
+	margin: 1px 0 0 0;
+</TMPL_IF>
+	padding: 0;
+}
+#util_fill_ok {
+	height: 8px;
+	background-color: #86d086;
+	padding: 0;
+	margin: 1px;
+}
+#util_fill_warn {
+	height: 8px;
+	background-color: #d0a238;
+	padding: 0;
+	margin: 1px;
+}
+#util_fill_emerg {
+	height: 8px;
+	background-color: red;
+	padding: 0;
+	margin: 1px;
+}
+.graphs div {
+	position: relative;
+	float: left;
+	width: 100%;
+}
+.graphs ul.graph_wrap {
+	position: relative;
+	float: left;
+	width: 100%;
+	padding: 0 10px 0 30px;
+}
+.graphs li.graph_wrap {
+	position: relative;
+	float: left;
+	display: block;
+}
+.graphs ul.legend_wrap {
+	position: relative;
+	float: left;
+	padding-left: 0px;
+}
+.graphs li.legend_color {
+	position: relative;
+	float: left;
+	height: 10px;
+	width: 7px;
+	border: 1px solid black;
+	display: block;
+}
+.graphs li.legend_label {
+	position: relative;
+	float: left;
+	font-size: 70%;
+	display: block;
+	padding-left: 3px;
+}

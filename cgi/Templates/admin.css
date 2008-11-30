@@ -1,0 +1,129 @@
+<style type="text/css">
+
+body {
+	background: #fff;
+	font-family: verdana;
+	color: #000;
+}
+th {
+	padding: 3px;
+	background-color: #b7b7b7;
+}
+a:link, a:visited, a:active {
+	text-decoration: none;
+}
+a:link.plus, a:visited.plus, a:active.plus {
+	text-decoration: none;
+	font-weight: bold;
+	color: white;
+}
+a:hover.plus {
+	text-decoration: none;
+	font-weight: bold;
+	color: #eebb00;
+}
+pre {
+	font-size: 80%;
+	color: #000;
+}
+#wrp {
+	width: 90%;
+	position: relative;
+	margin: 10px auto;
+	overflow: hidden;
+}
+#header {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	margin: 5px auto;
+	height: 50px;
+	background-image: url(images/header.jpg);
+	background-repeat: no-repeat;
+	background-color: #2b2b6b;
+	color: #fff;
+	display: table;
+	z-index: 100;
+	}
+#header ul {
+	padding: 0;
+	margin: 1px;
+	}
+#header li {
+	position: relative;
+	float: left;
+	margin: 15px 5px 0 0;
+	height: 25px;
+	font-size: 150%;
+	display: block;
+	}
+#header li.bold {
+	margin-left: 75px;
+	font-weight: bold;
+	}
+#devices {
+	position: relative;
+	float: left;
+	width: 100%;
+	//margin: 0 0 0 5px;
+	margin: 60px 0 0 0;
+}
+#device_groups {
+	width: 90%;
+	float: left;
+	margin: 0 0 0 4px;
+}
+#footer {
+	width: 100%;
+	float: left;
+	margin: 10px 0 0 0;
+}
+
+// Start popup js
+div#popupAddDevice, div#popupModifyDevice, div#popupDeleteDevice, div#popupAddGroup, div#popupModifyGroup, div#popupDeleteGroup, div#popupAddGroupMember, div#popupDeleteGroupMember {
+        position: absolute;
+        display: none;
+        top: 80px;
+        width: 300px;
+        right: auto;
+        bottom: auto;
+        padding: 2em;
+        border: 3px solid black;
+        background-color: white;
+}
+div#popupAddDevice {
+        height: 130px;
+}
+div#popupModifyDevice {
+        height: 130px;
+}
+div#popupDeleteDevice {
+        height: 100px;
+}
+div#popupAddGroup {
+        height: 110px;
+}
+div#popupModifyGroup {
+        height: 110px;
+}
+div#popupDeleteGroup {
+        height: 110px;
+}
+div#popupAddGroupMember {
+        height: 80px;
+}
+div#popupDeleteGroupMember {
+        height: 80px;
+}
+div#closePopup {
+	position: absolute;
+	top: 5px;
+	left: auto;
+	right: 5px;
+	bottom: auto;
+	padding: 2px 7px 4px 7px;
+	background-color: #000;
+}
+
+</style>

@@ -1,0 +1,373 @@
+#TabContainer {
+	width: 100%;
+	background-color: #606060;
+	color: #FFFFFF;
+}
+
+#DetailsTabs {
+	border: 1px solid #000000;
+	list-style-type: none;
+	padding-left: 25%;
+}
+
+#DetailsTabs li {
+	font-size: 13px;
+	float: left;
+	clear: none;
+}
+
+#captions {
+	width: 100%;
+	height: 25px;
+	overflow: hidden;
+	font-size: 18px;
+	font-family: Helvetica;
+	border-bottom: 1px solid #666666;
+}
+
+#captions ul {
+	position: relative;
+	float: left;
+	height: 25px;
+	width: 100%;
+	padding: 0;
+	margin: 0;
+	color: #3F3F3F;
+	background-color: #909090;
+	background: url(../images/column-header.png) repeat-x;
+	background-position: 0 -1px;
+}
+
+#captions li {
+	position: relative;
+	display: block;
+	float: left;
+	font-size: 60%;
+	font-weight: bold;
+	text-align: center;
+	border: 0px solid black;
+	padding: 8px 0 2px 0;
+	margin: 0;
+	/*border-right: 1px solid #A0A0A0;*/
+}
+#captions span {
+	margin-left: 12px;
+}
+#captions li.endpoints {
+	width: 30%;
+}
+#captions li.session {
+	width: 40%;
+}
+#captions span.pager {
+	padding-left: 10px;
+}
+#captions a:link.pager, a:visited.pager, a:active.pager {
+	color: orange;
+}
+#captions span.pager_disabled {
+	color: grey;
+}
+#captions li.agent {
+	width: 30%;
+}
+.wrapmain ul.flowdetail {
+	position: relative;
+	float: left;
+	width: 95%;
+	padding-left: 15px;
+}
+.wrapmain li.flowdetail {
+	position: relative;
+	float: left;
+	width: 32%;
+	display: block;
+}
+.wrapmain td.left, #session td.left, #agent td.left {
+	width: 100%;
+	padding-bottom: 3px;
+	font-weight: bold;
+	font-size: 70%;
+}
+.wrapmain td.right, #session td.right, #agent td.right {
+	width: 100%;
+	padding-bottom: 3px;
+	padding-right: 20px;
+	font-size: 70%;
+	text-align: right;
+}
+.wrapmain {
+	position: relative;
+	float: left;
+	width: 100%;
+	background-color: #FFFFFF;
+	/*border-bottom: 1px solid #CCCCCC;*/
+}
+.device-detail .wrapmain {
+	background-color: inherit;
+	border-bottom: 0px;
+}
+.device-detail {
+	border-bottom: 1px solid #CCCCCC;
+}
+.cell-wrap {
+	float: left;
+	position: relative;
+	padding-top: 15px;
+}
+div.cell-wrap ul {
+	padding: 0;
+	margin: 1px;
+}
+div.cell-wrap li {
+	position: relative;
+	display: block;
+	float: left;
+	font-size: 70%;
+	padding: 0 0 5px 0;
+}
+div.cell-first li {
+	padding-left: 15px;
+}
+div.cell-first {
+	padding-top: 15px;
+}
+div.cells-1 li {
+	width: 100%;
+}
+div.cells-2 li {
+	width: 49%;
+}
+div.cells-3 li {
+	width: 33%;
+}
+div.cells-4 li {
+	width: 24%;
+}
+.devices li {
+	position: relative;
+	float: left;
+	width: 100%;
+	font-size: 70%;
+	padding: 0 0 5px 15px;
+	display: block;
+}
+.interfaces {
+	float: right;
+	width: 78%;
+}
+.interfaces li {
+	position: relative;
+	float: left;
+	width: 24%;
+	font-size: 70%;
+	padding: 0 0 5px 0;
+	display: block;
+	border: 0px solid black;
+}
+.interfaces li.index {
+	width: 8%;
+	text-align: center;
+}
+.interfaces li.util_pct {
+	width: 8%;
+	padding-left: 5px;
+}
+.interfaces li.links {
+	width: 26%;
+	text-align: center;
+}
+.interfaces li a img {
+	border: 0;
+	height: 16px;
+	width: 16px;
+}
+.interfaces li.bar-graph {
+	font-size: 10px;
+}
+
+.services {
+	position: relative;
+	float: right;
+	width: 100%;
+	padding-top: 15px;
+}
+.services ul {
+	position: relative;
+	float: left;
+	width: 100%;
+	padding: 0;
+	margin: 0;
+}
+.services li {
+	position: relative;
+	float: left;
+	font-size: 70%;
+	padding: 0 0 5px 0;
+	text-align: center;
+	display: block;
+	border: 0px solid black;
+}
+#Table li.name, #captions li.name {
+	width: 10%;
+}
+#Table li.protocol, #captions li.protocol {
+	width: 10%;
+}
+#Table li.bytes, #captions li.bytes {
+	width: 20%;
+}
+#Table li.traffic_all, #captions li.traffic_all {
+	width: 20%;
+}
+#Table li.traffic_in, #captions li.traffic_in {
+	width: 20%;
+}
+#Table li.traffic_out, #captions li.traffic_out {
+/*<TMPL_IF name="msie">
+	width: 19%;
+<TMPL_ELSE>*/
+	width: 20%;
+/*</TMPL_IF>*/
+}
+#Table li.srcaddr, #captions li.srcaddr {
+	width: 15%;
+}
+#Table li.srcport, #captions li.srcport {
+	width: 10%;
+}
+#Table li.dstaddr, #captions li.dstaddr {
+	width: 15%;
+}
+#Table li.dstport, #captions li.dstport {
+	width: 10%;
+}
+#Table li.protocol, #captions li.protocol {
+	width: 10%;
+}
+#Table li.bytes, #captions li.bytes {
+	width: 15%;
+}
+#Table li.trafficall, #captions li.trafficall {
+/*<TMPL_IF name="msie">
+	width: 24%;
+<TMPL_ELSE>
+	width: 25%;
+</TMPL_IF>
+*/
+	width: 25%;
+}
+
+#Table.summary div.wrapmain {
+	cursor: pointer;
+}
+
+#Table.summary div.selected {
+	background-color: #AACCFF;
+}
+
+.hosts li.address, #captions li.address {
+	width: 25%;
+}
+.hosts li.bytes, #captions li.bytes {
+	width: 25%;
+}
+.hosts li.traffic_all {
+	margin-left: 5%;
+	width: 20%;
+}
+.hosts li.filler, #captions li.filler {
+	width: 25%;
+}
+
+.services span {
+	margin-left: 10%;
+	margin-right: 5%;
+	width: 60%;
+}
+.services span div {
+	position: relative;
+	float: left;
+}
+.utz span {
+	width: 20%;
+}
+.util {
+	float: left;
+	width: 90px;
+	height: 10px;
+	border: 1px solid silver;
+	padding: 0;
+	margin: 0 0 0 2px;
+	background-color: #FFFFFF;
+}
+.util_fill_ok {
+	height: 8px;
+	background-color: #86d086;
+	padding: 0;
+	margin: 1px;
+}
+.util_fill_warn {
+	height: 8px;
+	background-color: #d0a238;
+	padding: 0;
+	margin: 1px;
+}
+.util_fill_emerg {
+	height: 8px;
+	background-color: red;
+	padding: 0;
+	margin: 1px;
+}
+hr {
+	display: block;
+	clear: left;
+	margin: 0;
+	visibility: hidden;
+}
+.graphs {
+	padding-top: 25px;
+	clear: both;
+}
+.graphs div {
+	position: relative;
+	float: left;
+	width: 100%;
+}
+.graphs ul.graph-wrap {
+	position: relative;
+	float: left;
+	padding: 0 10px 0 30px;
+	margin: 0 0 0 15%;
+}
+.graphs li.graph-wrap {
+	position: relative;
+	float: left;
+	display: block;
+	padding-right: 20px;
+}
+.graphs ul.legend-wrap {
+	position: relative;
+	float: left;
+	padding-left: 0px;
+}
+.graphs li.legend_color {
+	position: relative;
+	float: left;
+	height: 10px;
+	width: 7px;
+	border: 1px solid black;
+	display: block;
+}
+.graphs li.legend_label {
+	position: relative;
+	float: left;
+	font-size: 70%;
+	display: block;
+	padding-left: 3px;
+}
+div.clearing {
+	display: block;
+	clear: both;
+	width: 100%;
+}

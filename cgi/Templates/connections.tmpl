@@ -1,0 +1,77 @@
+<h2 class="title"><TMPL_VAR name="subtitle"> - Agent <TMPL_VAR name="agent"></h2>
+
+<div id="captions">
+	<ul>
+		<li class="srcaddr">Source</li>
+		<li class="srcport">Source Port</li>
+		<li class="dstaddr">Destination</li>
+		<li class="dstport">Dest Port</li>
+		<li class="protocol">Protocol</li>
+		<li class="bytes">Traffic</li>
+		<li class="trafficall">% of Total Traffic</li>
+	</ul>
+</div>
+
+<div id="Table" class="services">
+	<div class="clearing"></div>
+	<TMPL_IF name="connections_loop">
+	<TMPL_LOOP name="connections_loop">
+	<div class="wrapmain">
+		<ul>
+			<li class="srcaddr"><TMPL_VAR name="src_addr"></li>
+			<li class="srcport"><TMPL_VAR name="src_service_name"></li>
+			<li class="dstaddr"><TMPL_VAR name="dst_addr"></li>
+			<li class="dstport"><TMPL_VAR name="dst_service_name"></li>
+			<li class="protocol"><TMPL_VAR name="protocol_name"></li>
+			<li class="bytes"><a href="?v=flowdetail&sa=<TMPL_VAR name="src_addr">&sp=<TMPL_VAR name="src_port">&da=<TMPL_VAR name="dst_addr">&dp=<TMPL_VAR name="dst_port">"><TMPL_VAR name="bytes_human"></a></li>
+			<li class="traffic_all">
+				<span class="util">
+					<div class="util_fill_<TMPL_VAR name="bytes_utz_color">" style="width: <TMPL_VAR name="bytes_utz">%;">
+					</div>
+				</span>
+				<span class="utz">
+					<div><TMPL_VAR name="bytes_utz">%</div>
+				</span>
+			</li>
+		</ul>
+	</div>
+	<div class="spacer"></div>
+	</TMPL_LOOP>
+	<TMPL_ELSE>
+	</TMPL_IF>
+</div>
+
+<div class="graphs">
+	<ul class="graph-wrap">
+
+	<TMPL_IF name="graph_left">
+		<li class="graph-wrap">
+			<TMPL_LOOP name="graph_left_legend_loop">
+			<ul class="legend-wrap">
+				<li class="legend_color" style="background-color: <TMPL_VAR name="color">;"></li>
+				<li class="legend_label"><TMPL_VAR name="label"></li>
+			</ul><br>
+			</TMPL_LOOP>
+		</li>
+		<li class="graph-wrap">
+			<img src="<TMPL_VAR name="graph_left">">
+		</li>
+	</TMPL_IF>
+
+	<TMPL_IF name="graph_right">
+		<li class="graph-wrap">
+			<TMPL_LOOP name="graph_right_legend_loop">
+			<ul class="legend-wrap">
+				<li class="legend_color" style="background-color: <TMPL_VAR name="color">;"></li>
+				<li class="legend_label"><TMPL_VAR name="label"></li>
+			</ul><br>
+			</TMPL_LOOP>
+		</li>
+		<li class="graph-wrap">
+			<img src="<TMPL_VAR name="graph_right">">
+		</li>
+	</TMPL_IF>
+
+	</ul>
+	<hr />
+</div>

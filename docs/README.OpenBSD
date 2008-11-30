@@ -1,0 +1,88 @@
+# NetFlow Dashboard README.OpenBSD
+
+To finish installing NetFlow Dashboard, the following steps must be completed.
+
+1) Enable the mod_perl module:
+
+	$ sudo mod_perl-enable
+
+2) Setup the PostgreSQL default database and service as described in
+   /usr/local/share/doc/postgresql/README.OpenBSD.
+
+3) Create the nfdb database:
+
+	$ sudo su - _postgresql
+	$ psql -U postgres -W < /var/www/netflowdashboard/sql/create_pgsql.sql
+		<enter postgres role password>
+		<enter nfdb_admin role password>
+
+4) Edit /etc/flowd.conf for your environment.  The following setting is required:
+
+		logfile "/tmp/flowpipe"
+
+   You will also need to edit the following settings for your environment:
+
+		listen on
+		flow source
+		accept agent
+
+5) Add an entry in httpd.conf and restart httpd.  Example:
+
+		<VirtualHost *:80>
+		    ServerName nfdb.yourdomain.com
+		    DocumentRoot /var/www/netflowdashboard/cgi
+		    PerlModule Apache::PerlRun
+		    <Location />
+		        SetHandler perl-script
+		        PerlHandler Apache::PerlRun
+		        PerlRequire /var/www/netflowdashboard/cgi/startup.pl
+		        Options ExecCGI
+		        PerlSendHeader On
+		        DirectoryIndex index.cgi
+		        Order deny,allow
+		        Allow from all
+		    </Location>
+		    <Location /images/>
+		        SetHandler default-handler
+		    </Location>
+		    <Location /css/>
+		        SetHandler default-handler
+		    </Location>
+		    <Location /js/>
+		        SetHandler default-handler
+		    </Location>
+		</VirtualHost>
+
+6) Add the following cron entry:
+
+	0 23 * * *		/var/www/netflowdashboard/sbin/nfdbmaint.pl
+
+   This job performs nightly maintenance on the database tables.  
+   Only one calendar days' worth of tables are saved each night.
+   If you wish to increase this amount, pass it the correct number 
+   using the "-s" flag.  For example,
+   "/var/www/netflowdashboard/sbin/nfdbmaint.pl -s 7" will cause it
+   to delete the 8th oldest day of data.
+
+7) Start the "feeder" service:
+
+	$ sudo /var/www/netflowdashboard/sbin/netflowdb.pl
+
+   You do not need to start the collector (net/flowd) manually.  This
+   script handles the startup and teardown of the collector and 
+   named pipe (fifo) used for communicating with the collector.
+
+8) Add the following lines to /etc/rc.local to have the feeder
+   start at boot:
+
+		if [ -x /usr/local/bin/pg_ctl ]; then
+			echo -n ' netflowdb flowd'
+			/var/www/netflowdashboard/sbin/netflowdb.pl
+		fi
+
+Your installation should now be complete.  Please refer to the online
+support resources if you have questions or concerns.
+
+	http://www.netflowdashboard.com/
+
+~ The NetFlow Dashboard team

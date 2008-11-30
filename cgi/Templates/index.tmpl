@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+	<title>NetFlow Dashboard</title>
+
+	<script type="text/javascript" src="js/jquery-1.2.6.js"></script>
+	<script type="text/javascript" src="js/netflow.js"></script>
+	<link rel="stylesheet" href="css/base.css" />
+	<link rel="stylesheet" href="css/detail.css" />
+</head>
+
+<body>
+
+<!-- Start wrapper window -->
+<div id="wrp">
+
+<!-- Start header -->
+<div id="header">
+</div>
+<!-- End header -->
+
+<div id="layout">
+	<!--  Start main window -->
+	<div id="main">
+		<div>
+			<TMPL_INCLUDE name="ajax.tmpl">
+		</div>
+	</div>
+	<!--  End Main Window -->
+
+
+	<!-- Start groups window -->
+	<div id="groups">
+		<ul>
+			<li class="title">GROUPS</li>
+			<li class="device"><a href="?t=<TMPL_VAR name="time">">All Devices</a></li>
+			<TMPL_LOOP name="groups_loop">
+			<li class="device">
+				<a href="?t=<TMPL_VAR name="time">&g=<TMPL_VAR name="id">" alt="<TMPL_VAR name="description">">
+					<TMPL_VAR name="name">
+				</a>
+			</li>
+			</TMPL_LOOP>
+		</ul>
+	</div>
+	<!-- End groups window -->
+</div>
+
+<!--  Start footer -->
+<div id="footer">
+	<ul>
+		<li>&copy; 2005 - 2008 <span class="bold">DixonGroup</span>&nbsp;Consulting</li>
+	</ul>
+</div>
+<!--  End footer -->
+
+
+<pre><TMPL_VAR name="dump"></pre>
+
+</div>
+
+
+</body>
+</html>

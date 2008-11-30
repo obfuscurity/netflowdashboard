@@ -1,0 +1,51 @@
+<h2 class="title"><TMPL_VAR name="subtitle"></h2>
+
+<div id="captions">
+	<ul>
+		<li class="address"><span>Hosts</span></li>
+		<li class="bytes"><span>Traffic</span></li>
+		<li class="traffic_all"><span>% of Total Traffic</span></li>
+		<li class="filler">&nbsp;</li>
+	</ul>
+</div>
+
+<div id="Table" class="services hosts">
+	<TMPL_IF name="hosts_loop">
+	<TMPL_LOOP name="hosts_loop">
+		<div class="wrapmain">
+			<ul>
+				<li class="address"><a href="?t=<TMPL_VAR name="time">&v=hosts&d=<TMPL_VAR name="agent_addr">&i=<TMPL_VAR name="index">&host_side=<TMPL_VAR name="host_side">&h=<TMPL_VAR name="addr">"><TMPL_VAR name="addr"></a></li>
+				<li class="bytes"><TMPL_VAR name="bytes_human"></li>
+				<li class="traffic_all">
+					<span class="util">
+						<div class="util_fill_<TMPL_VAR name="bytes_utz_color">" style="width: <TMPL_VAR name="bytes_utz">%;">
+						</div>
+					</span>
+					<span class="utz">
+						<div><TMPL_VAR name="bytes_utz">%</div>
+					</span>
+				</li>
+				<li class="filler">&nbsp;</li>
+			</ul>
+		</div>
+	</TMPL_LOOP>
+	<TMPL_ELSE>
+	</TMPL_IF>
+</div>
+
+<div class="graphs">
+	<ul class="graph-wrap">
+		<li class="graph-wrap">
+			<TMPL_LOOP name="graph_legend_loop">
+				<ul class="legend-wrap">
+					<li class="legend_color" style="background-color: <TMPL_VAR name="color">;"></li>
+					<li class="legend_label"><TMPL_VAR name="label"></li>
+				</ul>
+				<br />
+			</TMPL_LOOP>
+		</li>
+		<li class="graph-wrap">
+			<img src="<TMPL_VAR name="graph">">
+		</li>
+	</ul>
+</div>
