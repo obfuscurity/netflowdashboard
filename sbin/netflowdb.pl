@@ -127,7 +127,7 @@ sub update_existing_flow {
 
 	if ($@) {
 		$oid_error++;
-		die $@ if ($oid_error >= 5);
+		die $@ if ($oid_error >= 10);
 		sleep(1);
 		update_existing_flow($flow);
 	}
