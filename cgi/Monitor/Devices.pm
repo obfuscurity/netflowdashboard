@@ -13,7 +13,7 @@ sub gather {
 	my %devices;
 	my $dbh = $args{'dbh'};
 	my $cgi = $args{'cgi'};
-	my $time = $cgi->param('t') || 1;
+	my $time = $cgi->param('t') || 2;
 	my ($now, $then) = _get_timestamps(dbh => $dbh, delta => $time);
 	my $device_info = _get_devices_info(dbh => $dbh);
 	my $device_addrs = _get_groups_members(dbh => $dbh, group_id => $cgi->param('g')) if ($cgi->param('g'));
@@ -22,7 +22,7 @@ sub gather {
 		$query   .= "SUM(flow_packets) as packets, ";
 		$query   .= "SUM(flow_octets) as bytes ";
 		$query   .= "FROM flows_template ";
-		$query   .= "WHERE \"timestamp\" >= ? AND \"timestamp\" < ? ";
+		$query   .= "WHERE flow_timestamp >= ? AND flow_timestamp < ? ";
 		$query   .= "AND agent_addr in (\'" . join("\', \'", @{$device_addrs}) . "\') " if ($cgi->param('g'));
 		$query   .= "GROUP BY agent_addr, if_index_${if}";
 		my $sth = $dbh->prepare($query);
@@ -118,7 +118,7 @@ sub _get_sparklines {
 	my %args = @_;
 	my $dbh = $args{'dbh'};
 	my $time = $args{'time'};
-	my $query = "SELECT date_trunc('H', \"timestamp\") + (floor(extract('minute' FROM \"timestamp\") / (? * 5)) * (? * 5)) * '1 minute'::interval AS time, floor((sum(flow_octets) * 8) / 1000000 / ( ? * 300)) AS mbps FROM flows_template WHERE agent_addr=? AND \"timestamp\" > current_timestamp - ? * '1 hour'::interval GROUP BY time ORDER BY time ASC";
+	my $query = "SELECT date_trunc('H', flow_timestamp) + (floor(extract('minute' FROM flow_timestamp) / (? * 5)) * (? * 5)) * '1 minute'::interval AS time, floor((sum(flow_octets) * 8) / 1000000 / ( ? * 300)) AS mbps FROM flows_template WHERE agent_addr=? AND flow_timestamp > current_timestamp - ? * '1 hour'::interval GROUP BY time ORDER BY time ASC";
 	my $sth = $dbh->prepare($query);
 	$sth->execute($time, $time, $time, $args{'device_addr'}, $time);
 	my @data;

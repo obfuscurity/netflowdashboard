@@ -75,7 +75,7 @@ ALTER TABLE public.devices OWNER TO nfdb_admin;
 
 CREATE TABLE flows_template (
     protocol smallint DEFAULT 0 NOT NULL,
-    "timestamp" timestamp with time zone DEFAULT now() NOT NULL,
+    flow_timestamp timestamp with time zone DEFAULT now() NOT NULL,
     time_nanosec integer DEFAULT 0 NOT NULL,
     recv_secs integer DEFAULT 0 NOT NULL,
     sys_uptime_ms bigint DEFAULT 0 NOT NULL,
@@ -215,9 +215,9 @@ BEGIN
 			|| ';';
 		EXECUTE 'CREATE TABLE ' 
 			|| tablename 
-			|| ' ( CHECK ( "timestamp" >= TIMESTAMP WITH TIME ZONE '''
+			|| ' ( CHECK ( flow_timestamp >= TIMESTAMP WITH TIME ZONE '''
 			|| date || ' ' || to_char(hour, 'FM00') || ':00:00'''
-			|| ' AND "timestamp" < TIMESTAMP WITH TIME ZONE '''
+			|| ' AND flow_timestamp < TIMESTAMP WITH TIME ZONE '''
 			|| date || ' ' || to_char((hour + 1), 'FM00') || ':00:00'''
 			|| ' ) ) INHERITS (flows_template);';
 		EXECUTE 'GRANT SELECT,INSERT,UPDATE ON TABLE ' 
@@ -262,42 +262,42 @@ BEGIN
 			|| tablename 
 			|| '_timestamp ON ' 
 			|| tablename
-			|| ' ("timestamp");';
+			|| ' (flow_timestamp);';
 		EXECUTE 'CREATE INDEX index_' 
 			|| tablename 
 			|| '_ifindexin_timestamp_agent ON ' 
 			|| tablename
-			|| ' (if_index_in, "timestamp", agent_addr);';
+			|| ' (if_index_in, flow_timestamp, agent_addr);';
 		EXECUTE 'CREATE INDEX index_' 
 			|| tablename 
 			|| '_srcport_agent_timestamp_ifindexin ON ' 
 			|| tablename
-			|| ' (src_port, agent_addr, "timestamp", if_index_in);';
+			|| ' (src_port, agent_addr, flow_timestamp, if_index_in);';
 		EXECUTE 'CREATE INDEX index_' 
 			|| tablename 
 			|| '_dstport_agent_timestamp_ifindexin ON ' 
 			|| tablename
-			|| ' (dst_port, agent_addr, "timestamp", if_index_in);';
+			|| ' (dst_port, agent_addr, flow_timestamp, if_index_in);';
 		EXECUTE 'CREATE INDEX index_' 
 			|| tablename 
 			|| '_srcaddr_agent_timestamp_ifindexin ON ' 
 			|| tablename
-			|| ' (src_addr, agent_addr, "timestamp", if_index_in);';
+			|| ' (src_addr, agent_addr, flow_timestamp, if_index_in);';
 		EXECUTE 'CREATE INDEX index_' 
 			|| tablename 
 			|| '_dstaddr_agent_timestamp_ifindexin ON ' 
 			|| tablename
-			|| ' (dst_addr, agent_addr, "timestamp", if_index_in);';
+			|| ' (dst_addr, agent_addr, flow_timestamp, if_index_in);';
 		EXECUTE 'CREATE INDEX index_' 
 			|| tablename 
 			|| '_proto_agent_timestamp_srcport_ifindexin ON ' 
 			|| tablename
-			|| ' (protocol, agent_addr, "timestamp", src_port, if_index_in);';
+			|| ' (protocol, agent_addr, flow_timestamp, src_port, if_index_in);';
 		EXECUTE 'CREATE INDEX index_' 
 			|| tablename 
 			|| '_proto_agent_timestamp_dstport_ifindexin ON ' 
 			|| tablename
-			|| ' (protocol, agent_addr, "timestamp", dst_port, if_index_in);';
+			|| ' (protocol, agent_addr, flow_timestamp, dst_port, if_index_in);';
 		EXECUTE 'CREATE INDEX index_' 
 			|| tablename 
 			|| '_srcaddrport_dstaddrport ON ' 
@@ -336,9 +336,9 @@ BEGIN
 			|| ';';
 		EXECUTE 'CREATE TABLE ' 
 			|| tablename 
-			|| ' ( CHECK ( "timestamp" >= TIMESTAMP WITH TIME ZONE '''
+			|| ' ( CHECK ( flow_timestamp >= TIMESTAMP WITH TIME ZONE '''
 			|| date || ' ' || to_char(hour, 'FM00') || ':00:00'''
-			|| ' AND "timestamp" < TIMESTAMP WITH TIME ZONE '''
+			|| ' AND flow_timestamp < TIMESTAMP WITH TIME ZONE '''
 			|| date || ' ' || to_char((hour + 1), 'FM00') || ':00:00'''
 			|| ' ) ) INHERITS (flows_template);';
 		EXECUTE 'GRANT SELECT,INSERT,UPDATE ON TABLE ' 
@@ -383,42 +383,42 @@ BEGIN
 			|| tablename 
 			|| '_timestamp ON ' 
 			|| tablename
-			|| ' ("timestamp");';
+			|| ' (flow_timestamp);';
 		EXECUTE 'CREATE INDEX index_' 
 			|| tablename 
 			|| '_ifindexin_timestamp_agent ON ' 
 			|| tablename
-			|| ' (if_index_in, "timestamp", agent_addr);';
+			|| ' (if_index_in, flow_timestamp, agent_addr);';
 		EXECUTE 'CREATE INDEX index_' 
 			|| tablename 
 			|| '_srcport_agent_timestamp_ifindexin ON ' 
 			|| tablename
-			|| ' (src_port, agent_addr, "timestamp", if_index_in);';
+			|| ' (src_port, agent_addr, flow_timestamp, if_index_in);';
 		EXECUTE 'CREATE INDEX index_' 
 			|| tablename 
 			|| '_dstport_agent_timestamp_ifindexin ON ' 
 			|| tablename
-			|| ' (dst_port, agent_addr, "timestamp", if_index_in);';
+			|| ' (dst_port, agent_addr, flow_timestamp, if_index_in);';
 		EXECUTE 'CREATE INDEX index_' 
 			|| tablename 
 			|| '_srcaddr_agent_timestamp_ifindexin ON ' 
 			|| tablename
-			|| ' (src_addr, agent_addr, "timestamp", if_index_in);';
+			|| ' (src_addr, agent_addr, flow_timestamp, if_index_in);';
 		EXECUTE 'CREATE INDEX index_' 
 			|| tablename 
 			|| '_dstaddr_agent_timestamp_ifindexin ON ' 
 			|| tablename
-			|| ' (dst_addr, agent_addr, "timestamp", if_index_in);';
+			|| ' (dst_addr, agent_addr, flow_timestamp, if_index_in);';
 		EXECUTE 'CREATE INDEX index_' 
 			|| tablename 
 			|| '_proto_agent_timestamp_srcport_ifindexin ON ' 
 			|| tablename
-			|| ' (protocol, agent_addr, "timestamp", src_port, if_index_in);';
+			|| ' (protocol, agent_addr, flow_timestamp, src_port, if_index_in);';
 		EXECUTE 'CREATE INDEX index_' 
 			|| tablename 
 			|| '_proto_agent_timestamp_dstport_ifindexin ON ' 
 			|| tablename
-			|| ' (protocol, agent_addr, "timestamp", dst_port, if_index_in);';
+			|| ' (protocol, agent_addr, flow_timestamp, dst_port, if_index_in);';
 		EXECUTE 'CREATE INDEX index_' 
 			|| tablename 
 			|| '_srcaddrport_dstaddrport ON ' 
@@ -453,27 +453,27 @@ BEGIN
 	create_cmd := 'CREATE OR REPLACE FUNCTION flows_insert_trigger() '
 		|| 'RETURNS TRIGGER AS $PROC$ '
 		|| 'BEGIN '
-		|| 'IF ( NEW."timestamp" >= TIMESTAMP WITH TIME ZONE '''
+		|| 'IF ( NEW.flow_timestamp >= TIMESTAMP WITH TIME ZONE '''
 		|| date
-		|| ''' AND NEW."timestamp" < TIMESTAMP WITH TIME ZONE '''
+		|| ''' AND NEW.flow_timestamp < TIMESTAMP WITH TIME ZONE '''
 		|| date + interval '1 hour'
 		|| ''' ) THEN INSERT INTO flows_'
 		|| to_char(date, 'yyyymmddhh24')
 		|| ' VALUES (NEW.*);';
 	FOR time IN 1..46 LOOP
 		create_cmd := create_cmd 
-			|| 'ELSIF ( NEW."timestamp" >= TIMESTAMP WITH TIME ZONE '''
+			|| 'ELSIF ( NEW.flow_timestamp >= TIMESTAMP WITH TIME ZONE '''
 			|| date + time * interval '1 hour'
-			|| ''' AND NEW."timestamp" < TIMESTAMP WITH TIME ZONE '''
+			|| ''' AND NEW.flow_timestamp < TIMESTAMP WITH TIME ZONE '''
 			|| date + (time + 1) * interval '1 hour'
 			|| ''' ) THEN INSERT INTO flows_'
 			|| to_char(date + time * interval '1 hours', 'yyyymmddhh24')
 			|| ' VALUES (NEW.*);';
 	END LOOP;
 	create_cmd := create_cmd 
-		|| 'ELSIF ( NEW."timestamp" >= TIMESTAMP WITH TIME ZONE '''
+		|| 'ELSIF ( NEW.flow_timestamp >= TIMESTAMP WITH TIME ZONE '''
 		|| date + interval '47 hours'
-		|| ''' AND NEW."timestamp" < TIMESTAMP WITH TIME ZONE '''
+		|| ''' AND NEW.flow_timestamp < TIMESTAMP WITH TIME ZONE '''
 		|| date + interval '48 hours'
 		|| ''' ) THEN INSERT INTO flows_'
 		|| to_char(date + interval '47 hours', 'yyyymmddhh24')
@@ -587,14 +587,14 @@ CREATE INDEX index_flows_template_dst_port ON flows_template USING btree (dst_po
 -- Name: index_flows_template_dstaddr_agent_timestamp_ifindexin; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE INDEX index_flows_template_dstaddr_agent_timestamp_ifindexin ON flows_template USING btree (dst_addr, agent_addr, "timestamp", if_index_in);
+CREATE INDEX index_flows_template_dstaddr_agent_timestamp_ifindexin ON flows_template USING btree (dst_addr, agent_addr, flow_timestamp, if_index_in);
 
 
 --
 -- Name: index_flows_template_dstport_agent_timestamp_ifindexin; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE INDEX index_flows_template_dstport_agent_timestamp_ifindexin ON flows_template USING btree (dst_port, agent_addr, "timestamp", if_index_in);
+CREATE INDEX index_flows_template_dstport_agent_timestamp_ifindexin ON flows_template USING btree (dst_port, agent_addr, flow_timestamp, if_index_in);
 
 
 --
@@ -622,21 +622,21 @@ CREATE INDEX index_flows_template_if_index_out ON flows_template USING btree (if
 -- Name: index_flows_template_ifindexin_timestamp_agent; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE INDEX index_flows_template_ifindexin_timestamp_agent ON flows_template USING btree (if_index_in, "timestamp", agent_addr);
+CREATE INDEX index_flows_template_ifindexin_timestamp_agent ON flows_template USING btree (if_index_in, flow_timestamp, agent_addr);
 
 
 --
 -- Name: index_flows_template_proto_agent_timestamp_dstport_ifindexin; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE INDEX index_flows_template_proto_agent_timestamp_dstport_ifindexin ON flows_template USING btree (protocol, agent_addr, "timestamp", dst_port, if_index_in);
+CREATE INDEX index_flows_template_proto_agent_timestamp_dstport_ifindexin ON flows_template USING btree (protocol, agent_addr, flow_timestamp, dst_port, if_index_in);
 
 
 --
 -- Name: index_flows_template_proto_agent_timestamp_srcport_ifindexin; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE INDEX index_flows_template_proto_agent_timestamp_srcport_ifindexin ON flows_template USING btree (protocol, agent_addr, "timestamp", src_port, if_index_in);
+CREATE INDEX index_flows_template_proto_agent_timestamp_srcport_ifindexin ON flows_template USING btree (protocol, agent_addr, flow_timestamp, src_port, if_index_in);
 
 
 --
@@ -657,7 +657,7 @@ CREATE INDEX index_flows_template_src_port ON flows_template USING btree (src_po
 -- Name: index_flows_template_srcaddr_agent_timestamp_ifindexin; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE INDEX index_flows_template_srcaddr_agent_timestamp_ifindexin ON flows_template USING btree (src_addr, agent_addr, "timestamp", if_index_in);
+CREATE INDEX index_flows_template_srcaddr_agent_timestamp_ifindexin ON flows_template USING btree (src_addr, agent_addr, flow_timestamp, if_index_in);
 
 
 --
@@ -671,14 +671,14 @@ CREATE INDEX index_flows_template_srcaddrport_dstaddrport ON flows_template USIN
 -- Name: index_flows_template_srcport_agent_timestamp_ifindexin; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE INDEX index_flows_template_srcport_agent_timestamp_ifindexin ON flows_template USING btree (src_port, agent_addr, "timestamp", if_index_in);
+CREATE INDEX index_flows_template_srcport_agent_timestamp_ifindexin ON flows_template USING btree (src_port, agent_addr, flow_timestamp, if_index_in);
 
 
 --
 -- Name: index_flows_template_timestamp; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE INDEX index_flows_template_timestamp ON flows_template USING btree ("timestamp");
+CREATE INDEX index_flows_template_timestamp ON flows_template USING btree (flow_timestamp);
 
 
 --

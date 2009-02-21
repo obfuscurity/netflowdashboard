@@ -21,7 +21,7 @@ sub gather {
 	$query   .= "FROM flows_template ";
 	$query   .= "WHERE protocol=? ";
 	$query   .= "AND agent_addr=? ";
-	$query   .= "AND \"timestamp\" >= ? AND \"timestamp\" < ? ";
+	$query   .= "AND flow_timestamp >= ? AND flow_timestamp < ? ";
 	$query   .= "AND (src_port=? OR dst_port=?) ";
 	$query   .= "AND (if_index_in=? OR if_index_out=?) ";
 	$query   .= "GROUP BY protocol, agent_addr, src_addr, dst_addr, src_port, dst_port, if_index_in, if_index_out ";
@@ -58,7 +58,7 @@ sub _get_bandwidth {
     my $query = "SELECT SUM(flow_octets) as bytes ";
     $query   .= "FROM flows_template ";
     $query   .= "WHERE agent_addr=? ";
-    $query   .= "AND \"timestamp\" >= ? AND \"timestamp\" < ? ";
+    $query   .= "AND flow_timestamp >= ? AND flow_timestamp < ? ";
     $query   .= "AND (if_index_in=? OR if_index_out=?)";
     my $sth = $dbh->prepare($query);
     $sth->execute($cgi->param('d'), $args{'then'}, $args{'now'}, $cgi->param('i'), $cgi->param('i')) || die $dbh->errstr;
