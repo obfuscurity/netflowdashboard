@@ -9,12 +9,13 @@ To finish installing NetFlow Dashboard, the following steps must be completed.
 2) Setup the PostgreSQL default database and service as described in
    /usr/local/share/doc/postgresql/README.OpenBSD.
 
-3) Create the nfdb database:
+3) Create the nfdb database.  The default nfdb_admin password is 'nfdb_admin_pass'.
 
 	$ sudo su - _postgresql
 	$ psql -U postgres -W < /var/www/netflowdashboard/sql/create_pgsql.sql
 		<enter postgres role password>
 		<enter nfdb_admin role password>
+		<enter postgres role password>
 
 4) Edit /etc/flowd.conf for your environment.  The following setting is required:
 
@@ -53,18 +54,7 @@ To finish installing NetFlow Dashboard, the following steps must be completed.
 		    </Location>
 		</VirtualHost>
 
-6) Add the following cron entry:
-
-	0 23 * * *		/var/www/netflowdashboard/sbin/nfdbmaint.pl
-
-   This job performs nightly maintenance on the database tables.  
-   Only one calendar days' worth of tables are saved each night.
-   If you wish to increase this amount, pass it the correct number 
-   using the "-s" flag.  For example,
-   "/var/www/netflowdashboard/sbin/nfdbmaint.pl -s 7" will cause it
-   to delete the 8th oldest day of data.
-
-7) Start the "feeder" service:
+6) Start the "feeder" service:
 
 	$ sudo /var/www/netflowdashboard/sbin/netflowdb.pl
 
@@ -72,7 +62,7 @@ To finish installing NetFlow Dashboard, the following steps must be completed.
    script handles the startup and teardown of the collector and 
    named pipe (fifo) used for communicating with the collector.
 
-8) Add the following lines to /etc/rc.local to have the feeder
+7) Add the following lines to /etc/rc.local to have the feeder
    start at boot:
 
 		if [ -x /usr/local/bin/pg_ctl ]; then
