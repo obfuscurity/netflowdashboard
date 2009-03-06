@@ -22,15 +22,15 @@ my $flowd_socket = '/tmp/flowpipe';
 
 # Database options
 my $dbname = 'nfdb';
-my $dbuser = 'nfdb_user';
-my $dbpass = 'nfdb_pass';
+my $dbuser = 'nfdb_super';
+my $dbpass = 'nfdbistheshit';
 my $dsn = "DBI:Pg:database=$dbname;host=127.0.0.1;port=5432";
 my $dbh = DBI->connect($dsn, $dbuser, $dbpass, { PrintError => 0, RaiseError => 1, AutoCommit => 1 }) || die $DBI::errstr;
 my $oid_error = 0;
 
 # Define our SQL queries
-my $flow_insert = "INSERT INTO flows_template VALUES (?,now(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-my $flow_update = "UPDATE flows_template SET flow_octets = flow_octets + ?, flow_packets = flow_packets + ? WHERE (src_addr IN (?,?) AND dst_addr IN (?,?)) AND (src_port IN (?,?) AND dst_port IN (?,?)) AND flow_start=? AND flow_finish=? AND agent_addr=?";
+my $flow_insert = "INSERT INTO flows VALUES (?,now(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+my $flow_update = "UPDATE flows SET flow_octets = flow_octets + ?, flow_packets = flow_packets + ? WHERE (src_addr IN (?,?) AND dst_addr IN (?,?)) AND (src_port IN (?,?) AND dst_port IN (?,?)) AND flow_start=? AND flow_finish=? AND agent_addr=?";
 
 # Prepare our SQL queries
 my $sth_flow_insert = $dbh->prepare($flow_insert);

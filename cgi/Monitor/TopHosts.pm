@@ -19,7 +19,7 @@ sub gather {
 	my $sort_field = $cgi->param('order_by') || 'bytes';
 	my $query = "SELECT DISTINCT agent_addr, src_addr, dst_addr, src_port, dst_port, protocol, if_index_in, if_index_out, ";
 	$query   .= "SUM(flow_octets) as bytes ";
-	$query   .= "FROM flows_template ";
+	$query   .= "FROM flows ";
 	$query   .= "WHERE ${prefix}_addr=? ";
 	$query   .= "AND agent_addr=? ";
 	$query   .= "AND flow_timestamp >= ? AND flow_timestamp < ? ";
@@ -60,7 +60,7 @@ sub _get_bandwidth {
     my $dbh = $args{'dbh'};
     my $cgi = $args{'cgi'};
     my $query = "SELECT SUM(flow_octets) as bytes ";
-    $query   .= "FROM flows_template ";
+    $query   .= "FROM flows ";
     $query   .= "WHERE agent_addr=? ";
     $query   .= "AND flow_timestamp >= ? AND flow_timestamp < ? ";
     $query   .= "AND (if_index_in=? OR if_index_out=?)";

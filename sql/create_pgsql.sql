@@ -12,9 +12,18 @@ CREATE ROLE nfdb_admin LOGIN
   ENCRYPTED PASSWORD 'md536a692274b783e08ddcf7ecd8b82028a'
   NOSUPERUSER NOINHERIT CREATEDB NOCREATEROLE;
 
+CREATE ROLE nfdb_super LOGIN
+  ENCRYPTED PASSWORD 'md517b83ffc140de044946ff5f2ff603440'
+  NOSUPERUSER NOINHERIT NOCREATEDB NOCREATEROLE;
+
 CREATE ROLE nfdb_user LOGIN
   ENCRYPTED PASSWORD 'md5a75a35cd1b3e9520486452ab626255a3'
   NOSUPERUSER NOINHERIT NOCREATEDB NOCREATEROLE;
+
+-- This should be set at the database level
+--
+ALTER ROLE nfdb_admin SET constraint_exclusion=on;
+ALTER ROLE nfdb_super SET constraint_exclusion=on;
 ALTER ROLE nfdb_user SET constraint_exclusion=on;
 
 --
@@ -70,10 +79,16 @@ CREATE TABLE devices (
 ALTER TABLE public.devices OWNER TO nfdb_admin;
 
 --
--- Name: flows_template; Type: TABLE; Schema: public; Owner: nfdb_admin; Tablespace: 
+-- Name: flows; Type: TABLE; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE TABLE flows_template (
+CREATE SCHEMA flows;
+
+--
+-- Name: flows; Type: TABLE; Schema: public; Owner: nfdb_admin; Tablespace: 
+--
+
+CREATE TABLE flows (
     protocol smallint DEFAULT 0 NOT NULL,
     flow_timestamp timestamp with time zone DEFAULT now() NOT NULL,
     time_nanosec integer DEFAULT 0 NOT NULL,
@@ -106,10 +121,220 @@ CREATE TABLE flows_template (
     netflow_version smallint DEFAULT 0 NOT NULL,
     engine_id smallint DEFAULT 0 NOT NULL,
     engine_type smallint DEFAULT 0 NOT NULL
+    
+)
+WITH (OIDS=FALSE);
+
+
+
+
+CREATE OR REPLACE FUNCTION flows_insert_trigger()
+  RETURNS trigger AS
+$BODY$ 
+DECLARE 
+	flow_time timestamp with time zone := NEW.flow_timestamp;
+BEGIN 
+	LOOP 
+	BEGIN
+	EXECUTE 'INSERT INTO flows.flows_'||to_char(NEW.flow_timestamp, 'YYYYMMDDHH24')||'(protocol, flow_timestamp, time_nanosec, recv_secs, sys_uptime_ms, src_addr, src_mask, src_port, src_addr_af, src_as, dst_addr, dst_mask, dst_port,dst_addr_af, dst_as, gateway_addr, gateway_addr_af,agent_addr, agent_addr_af, if_index_in, if_index_out, flow_start, flow_finish, flow_octets, flow_packets, tcp_flags, tos, crc, ffields, netflow_version, engine_id, engine_type)
+	VALUES ('
+	||NEW.protocol||','''
+	||NEW.flow_timestamp||''','
+	||NEW.time_nanosec||','
+	||NEW.recv_secs||','
+	||NEW.sys_uptime_ms||','''
+	||NEW.src_addr||''','
+	||NEW.src_mask||','
+	||NEW.src_port||','
+	||NEW.src_addr_af||','
+	||NEW.src_as||','''
+	||NEW.dst_addr||''','
+	||NEW.dst_mask||','
+	||NEW.dst_port||','''
+	||NEW.dst_addr_af||''','
+	||NEW.dst_as||','''
+	||NEW.gateway_addr||''','
+	||NEW.gateway_addr_af||','''
+	||NEW.agent_addr||''','
+	||NEW.agent_addr_af||','
+	||NEW.if_index_in||','
+	||NEW.if_index_out||','
+	||NEW.flow_start||','
+	||NEW.flow_finish||','
+	||NEW.flow_octets||','
+	||NEW.flow_packets||','
+	||NEW.tcp_flags||','
+	||NEW.tos||','
+	||NEW.crc||','
+	||NEW.ffields||','
+	||NEW.netflow_version||','
+	||NEW.engine_id||','
+	||NEW.engine_type||')';
+	RETURN NULL;
+	
+	EXCEPTION
+		WHEN undefined_table THEN 
+		EXECUTE 'SELECT create_hour_flow_partitions('''||flow_time||'''::timestamp with time zone)';
+	END;
+END LOOP;
+END;
+$BODY$
+  LANGUAGE 'plpgsql' VOLATILE
+  COST 100;
+ALTER FUNCTION flows_insert_trigger() OWNER TO nfdb_admin;
+
+
+-- Local configuration table
+
+CREATE TABLE local_config (
+	variable character varying (32) NOT NULL,
+	saved_value character varying (32),
+	CONSTRAINT pk_local_config PRIMARY KEY (variable)
 );
+ALTER TABLE local_config OWNER TO nfdb_admin;
+GRANT ALL ON TABLE local_config TO nfdb_admin;
+GRANT SELECT ON TABLE local_config TO nfdb_super;
+
+-- set default how many days of flows that are saved
+
+INSERT INTO local_config VALUES ('num_archived_days', '2');
 
 
-ALTER TABLE public.flows_template OWNER TO nfdb_admin;
+-- allow flow partitoins to be created per hour 
+
+CREATE OR REPLACE FUNCTION create_hour_flow_partitions(flow_timestamp timestamp with time zone)
+  RETURNS void AS
+$BODY$
+DECLARE
+	tablename character varying (32) := 'flows.flows_' || to_char(flow_timestamp, 'YYYYMMDDHH24');
+	short_tablename character varying (32) := 'flows_' || to_char(flow_timestamp, 'YYYYMMDDHH24');
+	mydate TEXT := to_char(flow_timestamp, 'YYYYMMDDHH24');
+	mydate_to_delete TEXT := to_char(flow_timestamp -  (SELECT (SELECT saved_value FROM local_config WHERE variable = 'num_archived_days')::integer * interval '1 day'), 'YYYYMMDDHH24') ;
+	BEGIN
+		EXECUTE 'CREATE TABLE ' 
+			|| tablename 
+			|| ' ( CHECK (flow_timestamp >= TIMESTAMP WITH TIME ZONE '''
+			|| date_trunc('hour',flow_timestamp) 
+			|| '''  AND flow_timestamp < TIMESTAMP WITH TIME ZONE '''
+			|| date_trunc('hour',flow_timestamp + interval '1 hour') 
+			||''' ) ) INHERITS (flows);';
+		EXECUTE 'ALTER TABLE '
+			|| tablename
+			|| ' OWNER TO nfdb_super';
+		EXECUTE 'GRANT ALL ON TABLE '
+			|| tablename 
+			|| ' TO nfdb_admin';
+EXECUTE 'GRANT SELECT ON TABLE ' 
+			|| tablename 
+			|| ' TO nfdb_user;';
+		EXECUTE 'CREATE INDEX flow_create_time_idx_'
+			|| mydate ||' ON '
+			||tablename|| ' (flow_timestamp)';
+		EXECUTE 'CREATE INDEX index_' 
+			|| short_tablename 
+			|| '_agent_addr ON ' 
+			|| tablename
+			|| ' (agent_addr);';
+		EXECUTE 'CREATE INDEX index_' 
+			|| short_tablename 
+			|| '_src_addr ON ' 
+			|| tablename
+			|| ' (src_addr);';
+		EXECUTE 'CREATE INDEX index_' 
+			|| short_tablename 
+			|| '_src_port ON ' 
+			|| tablename
+			|| ' (src_port);';
+		EXECUTE 'CREATE INDEX index_' 
+			|| short_tablename 
+			|| '_dst_addr ON ' 
+			|| tablename
+			|| ' (dst_addr);';
+		EXECUTE 'CREATE INDEX index_' 
+			|| short_tablename 
+			|| '_dst_port ON ' 
+			|| tablename
+			|| ' (dst_port);';
+		EXECUTE 'CREATE INDEX index_' 
+			|| short_tablename 
+			|| '_if_index_in ON ' 
+			|| tablename
+			|| ' (if_index_in);';
+		EXECUTE 'CREATE INDEX index_' 
+			|| short_tablename 
+			|| '_if_index_out ON ' 
+			|| tablename
+			|| ' (if_index_out);';
+		EXECUTE 'CREATE INDEX index_' 
+			|| short_tablename 
+			|| '_timestamp ON ' 
+			|| tablename
+			|| ' (flow_timestamp);';
+		EXECUTE 'CREATE INDEX index_' 
+			|| short_tablename 
+			|| '_ifindexin_timestamp_agent ON ' 
+			|| tablename
+			|| ' (if_index_in, flow_timestamp, agent_addr);';
+		EXECUTE 'CREATE INDEX index_' 
+			|| short_tablename 
+			|| '_srcport_agent_timestamp_ifindexin ON ' 
+			|| tablename
+			|| ' (src_port, agent_addr, flow_timestamp, if_index_in);';
+		EXECUTE 'CREATE INDEX index_' 
+			|| short_tablename 
+			|| '_dstport_agent_timestamp_ifindexin ON ' 
+			|| tablename
+			|| ' (dst_port, agent_addr, flow_timestamp, if_index_in);';
+		EXECUTE 'CREATE INDEX index_' 
+			|| short_tablename 
+			|| '_srcaddr_agent_timestamp_ifindexin ON ' 
+			|| tablename
+			|| ' (src_addr, agent_addr, flow_timestamp, if_index_in);';
+		EXECUTE 'CREATE INDEX index_' 
+			|| short_tablename 
+			|| '_dstaddr_agent_timestamp_ifindexin ON ' 
+			|| tablename
+			|| ' (dst_addr, agent_addr, flow_timestamp, if_index_in);';
+		EXECUTE 'CREATE INDEX index_' 
+			|| short_tablename 
+			|| '_proto_agent_timestamp_srcport_ifindexin ON ' 
+			|| tablename
+			|| ' (protocol, agent_addr, flow_timestamp, src_port, if_index_in);';
+		EXECUTE 'CREATE INDEX index_' 
+			|| short_tablename 
+			|| '_proto_agent_timestamp_dstport_ifindexin ON ' 
+			|| tablename
+			|| ' (protocol, agent_addr, flow_timestamp, dst_port, if_index_in);';
+		EXECUTE 'CREATE INDEX index_' 
+			|| short_tablename 
+			|| '_srcaddrport_dstaddrport ON ' 
+			|| tablename
+			|| ' (src_addr, src_port, dst_addr, dst_port);';
+		EXECUTE 'CREATE UNIQUE INDEX index_'
+			|| short_tablename
+			|| '_flows_unique ON '
+			|| tablename
+			|| ' ((case when src_addr > dst_addr then src_addr||''@@''||dst_addr '
+			|| ' ELSE dst_addr||''@@''||src_addr END), (CASE WHEN src_port > dst_port '
+			|| ' THEN src_port||''@@''||dst_port ELSE dst_port||''@@''||src_port END), '
+			|| 'flow_start, flow_finish, agent_addr);';
+		EXECUTE 'DROP TABLE IF EXISTS flows.flows_' ||  mydate_to_delete ;
+END;
+$BODY$
+  LANGUAGE 'plpgsql' VOLATILE
+  COST 100;
+ALTER FUNCTION create_hour_flow_partitions(timestamp with time zone) OWNER TO nfdb_admin;
+
+
+--
+-- Name: insert_flows_trigger; Type: TRIGGER; Schema: public; Owner: nfdb_admin
+--
+
+
+CREATE TRIGGER insert_flows_trigger
+    BEFORE INSERT ON flows
+    FOR EACH ROW
+    EXECUTE PROCEDURE flows_insert_trigger();
 
 --
 -- Name: groups; Type: TABLE; Schema: public; Owner: nfdb_admin; Tablespace: 
@@ -120,8 +345,6 @@ CREATE TABLE groups (
     name character varying(20) NOT NULL,
     description character varying(50)
 );
-
-
 ALTER TABLE public.groups OWNER TO nfdb_admin;
 
 --
@@ -132,7 +355,6 @@ CREATE TABLE groups_members (
     device_addr inet DEFAULT '0.0.0.0'::inet NOT NULL,
     group_id smallint DEFAULT 0 NOT NULL
 );
-
 
 ALTER TABLE public.groups_members OWNER TO nfdb_admin;
 
@@ -199,328 +421,6 @@ CREATE TABLE services_default (
 ALTER TABLE public.services_default OWNER TO nfdb_admin;
 
 --
--- Name: create_day_flow_partitions(text); Type: FUNCTION; Schema: public; Owner: nfdb_admin
---
-
-CREATE FUNCTION create_day_flow_partitions(text) RETURNS void
-    AS $$
-DECLARE
-	date text := $1;
-	tablename text;
-BEGIN
-	FOR hour IN 0..23 LOOP
-		tablename := 'flows_' || date || to_char(hour, 'FM00');
-		EXECUTE 'DROP TABLE IF EXISTS '
-			|| tablename
-			|| ';';
-		EXECUTE 'CREATE TABLE ' 
-			|| tablename 
-			|| ' ( CHECK ( flow_timestamp >= TIMESTAMP WITH TIME ZONE '''
-			|| date || ' ' || to_char(hour, 'FM00') || ':00:00'''
-			|| ' AND flow_timestamp < TIMESTAMP WITH TIME ZONE '''
-			|| date || ' ' || to_char((hour + 1), 'FM00') || ':00:00'''
-			|| ' ) ) INHERITS (flows_template);';
-		EXECUTE 'GRANT SELECT,INSERT,UPDATE ON TABLE ' 
-			|| tablename 
-			|| ' TO nfdb_user;';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_agent_addr ON ' 
-			|| tablename
-			|| ' (agent_addr);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_src_addr ON ' 
-			|| tablename
-			|| ' (src_addr);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_src_port ON ' 
-			|| tablename
-			|| ' (src_port);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_dst_addr ON ' 
-			|| tablename
-			|| ' (dst_addr);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_dst_port ON ' 
-			|| tablename
-			|| ' (dst_port);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_if_index_in ON ' 
-			|| tablename
-			|| ' (if_index_in);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_if_index_out ON ' 
-			|| tablename
-			|| ' (if_index_out);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_timestamp ON ' 
-			|| tablename
-			|| ' (flow_timestamp);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_ifindexin_timestamp_agent ON ' 
-			|| tablename
-			|| ' (if_index_in, flow_timestamp, agent_addr);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_srcport_agent_timestamp_ifindexin ON ' 
-			|| tablename
-			|| ' (src_port, agent_addr, flow_timestamp, if_index_in);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_dstport_agent_timestamp_ifindexin ON ' 
-			|| tablename
-			|| ' (dst_port, agent_addr, flow_timestamp, if_index_in);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_srcaddr_agent_timestamp_ifindexin ON ' 
-			|| tablename
-			|| ' (src_addr, agent_addr, flow_timestamp, if_index_in);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_dstaddr_agent_timestamp_ifindexin ON ' 
-			|| tablename
-			|| ' (dst_addr, agent_addr, flow_timestamp, if_index_in);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_proto_agent_timestamp_srcport_ifindexin ON ' 
-			|| tablename
-			|| ' (protocol, agent_addr, flow_timestamp, src_port, if_index_in);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_proto_agent_timestamp_dstport_ifindexin ON ' 
-			|| tablename
-			|| ' (protocol, agent_addr, flow_timestamp, dst_port, if_index_in);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_srcaddrport_dstaddrport ON ' 
-			|| tablename
-			|| ' (src_addr, src_port, dst_addr, dst_port);';
-		EXECUTE 'CREATE UNIQUE INDEX index_'
-			|| tablename
-			|| '_flows_unique ON '
-			|| tablename
-			|| ' ((case when src_addr > dst_addr then src_addr||''@@''||dst_addr '
-			|| ' ELSE dst_addr||''@@''||src_addr END), (CASE WHEN src_port > dst_port '
-			|| ' THEN src_port||''@@''||dst_port ELSE dst_port||''@@''||src_port END), '
-			|| 'flow_start, flow_finish, agent_addr);';
-	END LOOP;
-END;
-$$
-    LANGUAGE plpgsql;
-
-
-ALTER FUNCTION public.create_day_flow_partitions(text) OWNER TO nfdb_admin;
-
---
--- Name: create_nextday_flow_partitions(); Type: FUNCTION; Schema: public; Owner: nfdb_admin
---
-
-CREATE FUNCTION create_nextday_flow_partitions() RETURNS void
-    AS $$
-DECLARE
-	date text := regexp_replace(to_date((current_date + interval '1 day')::text, 'YYYY MM DD')::text, '-', '', 'g');
-	tablename text;
-BEGIN
-	FOR hour IN 0..23 LOOP
-		tablename := 'flows_' || date || to_char(hour, 'FM00');
-		EXECUTE 'DROP TABLE IF EXISTS '
-			|| tablename
-			|| ';';
-		EXECUTE 'CREATE TABLE ' 
-			|| tablename 
-			|| ' ( CHECK ( flow_timestamp >= TIMESTAMP WITH TIME ZONE '''
-			|| date || ' ' || to_char(hour, 'FM00') || ':00:00'''
-			|| ' AND flow_timestamp < TIMESTAMP WITH TIME ZONE '''
-			|| date || ' ' || to_char((hour + 1), 'FM00') || ':00:00'''
-			|| ' ) ) INHERITS (flows_template);';
-		EXECUTE 'GRANT SELECT,INSERT,UPDATE ON TABLE ' 
-			|| tablename 
-			|| ' TO nfdb_user;';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_agent_addr ON ' 
-			|| tablename
-			|| ' (agent_addr);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_src_addr ON ' 
-			|| tablename
-			|| ' (src_addr);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_src_port ON ' 
-			|| tablename
-			|| ' (src_port);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_dst_addr ON ' 
-			|| tablename
-			|| ' (dst_addr);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_dst_port ON ' 
-			|| tablename
-			|| ' (dst_port);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_if_index_in ON ' 
-			|| tablename
-			|| ' (if_index_in);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_if_index_out ON ' 
-			|| tablename
-			|| ' (if_index_out);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_timestamp ON ' 
-			|| tablename
-			|| ' (flow_timestamp);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_ifindexin_timestamp_agent ON ' 
-			|| tablename
-			|| ' (if_index_in, flow_timestamp, agent_addr);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_srcport_agent_timestamp_ifindexin ON ' 
-			|| tablename
-			|| ' (src_port, agent_addr, flow_timestamp, if_index_in);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_dstport_agent_timestamp_ifindexin ON ' 
-			|| tablename
-			|| ' (dst_port, agent_addr, flow_timestamp, if_index_in);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_srcaddr_agent_timestamp_ifindexin ON ' 
-			|| tablename
-			|| ' (src_addr, agent_addr, flow_timestamp, if_index_in);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_dstaddr_agent_timestamp_ifindexin ON ' 
-			|| tablename
-			|| ' (dst_addr, agent_addr, flow_timestamp, if_index_in);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_proto_agent_timestamp_srcport_ifindexin ON ' 
-			|| tablename
-			|| ' (protocol, agent_addr, flow_timestamp, src_port, if_index_in);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_proto_agent_timestamp_dstport_ifindexin ON ' 
-			|| tablename
-			|| ' (protocol, agent_addr, flow_timestamp, dst_port, if_index_in);';
-		EXECUTE 'CREATE INDEX index_' 
-			|| tablename 
-			|| '_srcaddrport_dstaddrport ON ' 
-			|| tablename
-			|| ' (src_addr, src_port, dst_addr, dst_port);';
-		EXECUTE 'CREATE UNIQUE INDEX index_'
-			|| tablename
-			|| '_flows_unique ON '
-			|| tablename
-			|| ' ((case when src_addr > dst_addr then src_addr||''@@''||dst_addr '
-			|| ' ELSE dst_addr||''@@''||src_addr END), (CASE WHEN src_port > dst_port '
-			|| ' THEN src_port||''@@''||dst_port ELSE dst_port||''@@''||src_port END), '
-			|| 'flow_start, flow_finish, agent_addr);';
-	END LOOP;
-END;
-$$
-    LANGUAGE plpgsql;
-
-
-ALTER FUNCTION public.create_nextday_flow_partitions() OWNER TO nfdb_admin;
-
---
--- Name: rebuild_flows_insert_trigger(); Type: FUNCTION; Schema: public; Owner: nfdb_admin
---
-
-CREATE FUNCTION rebuild_flows_insert_trigger() RETURNS void
-    AS $$
-DECLARE
-	date timestamp := date_trunc('day', now());
-	create_cmd text;
-BEGIN
-	create_cmd := 'CREATE OR REPLACE FUNCTION flows_insert_trigger() '
-		|| 'RETURNS TRIGGER AS $PROC$ '
-		|| 'BEGIN '
-		|| 'IF ( NEW.flow_timestamp >= TIMESTAMP WITH TIME ZONE '''
-		|| date
-		|| ''' AND NEW.flow_timestamp < TIMESTAMP WITH TIME ZONE '''
-		|| date + interval '1 hour'
-		|| ''' ) THEN INSERT INTO flows_'
-		|| to_char(date, 'yyyymmddhh24')
-		|| ' VALUES (NEW.*);';
-	FOR time IN 1..46 LOOP
-		create_cmd := create_cmd 
-			|| 'ELSIF ( NEW.flow_timestamp >= TIMESTAMP WITH TIME ZONE '''
-			|| date + time * interval '1 hour'
-			|| ''' AND NEW.flow_timestamp < TIMESTAMP WITH TIME ZONE '''
-			|| date + (time + 1) * interval '1 hour'
-			|| ''' ) THEN INSERT INTO flows_'
-			|| to_char(date + time * interval '1 hours', 'yyyymmddhh24')
-			|| ' VALUES (NEW.*);';
-	END LOOP;
-	create_cmd := create_cmd 
-		|| 'ELSIF ( NEW.flow_timestamp >= TIMESTAMP WITH TIME ZONE '''
-		|| date + interval '47 hours'
-		|| ''' AND NEW.flow_timestamp < TIMESTAMP WITH TIME ZONE '''
-		|| date + interval '48 hours'
-		|| ''' ) THEN INSERT INTO flows_'
-		|| to_char(date + interval '47 hours', 'yyyymmddhh24')
-		|| ' VALUES (NEW.*);'
-		|| 'ELSE RAISE EXCEPTION '
-		|| '''Date out of range.  Fix flows_insert_trigger() function.'';'
-		|| 'END IF;'
-		|| 'RETURN NULL;'
-		|| 'END;'
-		|| '$PROC$ LANGUAGE plpgsql;';
-	EXECUTE create_cmd;
-END;
-$$
-    LANGUAGE plpgsql;
-
-
-ALTER FUNCTION public.rebuild_flows_insert_trigger() OWNER TO nfdb_admin;
-
---
--- Name: drop_day_flow_partitions(integer); Type: FUNCTION; Schema: public; Owner: nfdb_admin
---
-
-CREATE OR REPLACE FUNCTION drop_day_flow_partitions(integer) RETURNS void
-	AS $$
-DECLARE
-		num_days_ago integer := $1;
-		date text := regexp_replace(to_date((current_date - num_days_ago * interval '1 day')::text, 'YYYY MM DD')::text, '-', '', 'g');
-		tablename text;
-BEGIN
-		FOR hour IN 0..23 LOOP
-				tablename := 'flows_' || date || to_char(hour, 'FM00');
-				EXECUTE 'DROP TABLE IF EXISTS ' || tablename || ';';
-		END LOOP;
-END;
-$$ LANGUAGE plpgsql;
-
-
-ALTER FUNCTION public.drop_day_flow_partitions(integer) OWNER TO nfdb_admin;
-
---
--- Create initial partitions and flows_insert_trigger()
---
-
-SELECT create_day_flow_partitions(regexp_replace(to_date(current_date::text, 'YYYY MM DD')::text, '-', '', 'g'));
-SELECT rebuild_flows_insert_trigger();
-
---
 -- Name: groups_id_seq; Type: SEQUENCE; Schema: public; Owner: nfdb_admin
 --
 
@@ -563,123 +463,114 @@ CREATE INDEX index_devices_device_addr ON devices USING btree (device_addr);
 
 
 --
--- Name: index_flows_template_agent_addr; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
+-- Name: index_flows_agent_addr; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE INDEX index_flows_template_agent_addr ON flows_template USING btree (agent_addr);
-
-
---
--- Name: index_flows_template_dst_addr; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
---
-
-CREATE INDEX index_flows_template_dst_addr ON flows_template USING btree (dst_addr);
+CREATE INDEX index_flows_agent_addr ON flows USING btree (agent_addr);
 
 
 --
--- Name: index_flows_template_dst_port; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
+-- Name: index_flows_dst_addr; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE INDEX index_flows_template_dst_port ON flows_template USING btree (dst_port);
-
-
---
--- Name: index_flows_template_dstaddr_agent_timestamp_ifindexin; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
---
-
-CREATE INDEX index_flows_template_dstaddr_agent_timestamp_ifindexin ON flows_template USING btree (dst_addr, agent_addr, flow_timestamp, if_index_in);
+CREATE INDEX index_flows_dst_addr ON flows USING btree (dst_addr);
 
 
 --
--- Name: index_flows_template_dstport_agent_timestamp_ifindexin; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
+-- Name: index_flows_dst_port; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE INDEX index_flows_template_dstport_agent_timestamp_ifindexin ON flows_template USING btree (dst_port, agent_addr, flow_timestamp, if_index_in);
-
-
---
--- Name: index_flows_template_foo; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
---
-
-CREATE INDEX index_flows_template_foo ON flows_template USING btree (if_index_in, agent_addr, flow_packets, flow_octets);
+CREATE INDEX index_flows_dst_port ON flows USING btree (dst_port);
 
 
 --
--- Name: index_flows_template_if_index_in; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
+-- Name: index_flows_dstaddr_agent_timestamp_ifindexin; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE INDEX index_flows_template_if_index_in ON flows_template USING btree (if_index_in);
-
-
---
--- Name: index_flows_template_if_index_out; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
---
-
-CREATE INDEX index_flows_template_if_index_out ON flows_template USING btree (if_index_out);
-
+CREATE INDEX index_flows_dstaddr_agent_timestamp_ifindexin ON flows USING btree (dst_addr, agent_addr, flow_timestamp, if_index_in);
 
 --
--- Name: index_flows_template_ifindexin_timestamp_agent; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
+-- Name: index_flows_dstport_agent_timestamp_ifindexin; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE INDEX index_flows_template_ifindexin_timestamp_agent ON flows_template USING btree (if_index_in, flow_timestamp, agent_addr);
+CREATE INDEX index_flows_dstport_agent_timestamp_ifindexin ON flows USING btree (dst_port, agent_addr, flow_timestamp, if_index_in);
+
+--
+-- Name: index_flows_foo; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
+--
+
+CREATE INDEX index_flows_foo ON flows USING btree (if_index_in, agent_addr, flow_packets, flow_octets);
 
 
 --
--- Name: index_flows_template_proto_agent_timestamp_dstport_ifindexin; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
+-- Name: index_flows_if_index_in; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE INDEX index_flows_template_proto_agent_timestamp_dstport_ifindexin ON flows_template USING btree (protocol, agent_addr, flow_timestamp, dst_port, if_index_in);
-
-
---
--- Name: index_flows_template_proto_agent_timestamp_srcport_ifindexin; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
---
-
-CREATE INDEX index_flows_template_proto_agent_timestamp_srcport_ifindexin ON flows_template USING btree (protocol, agent_addr, flow_timestamp, src_port, if_index_in);
+CREATE INDEX index_flows_if_index_in ON flows USING btree (if_index_in);
 
 
 --
--- Name: index_flows_template_src_addr; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
+-- Name: index_flows_if_index_out; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE INDEX index_flows_template_src_addr ON flows_template USING btree (src_addr);
-
-
---
--- Name: index_flows_template_src_port; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
---
-
-CREATE INDEX index_flows_template_src_port ON flows_template USING btree (src_port);
-
+CREATE INDEX index_flows_if_index_out ON flows USING btree (if_index_out);
 
 --
--- Name: index_flows_template_srcaddr_agent_timestamp_ifindexin; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
+-- Name: index_flows_ifindexin_timestamp_agent; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE INDEX index_flows_template_srcaddr_agent_timestamp_ifindexin ON flows_template USING btree (src_addr, agent_addr, flow_timestamp, if_index_in);
-
-
---
--- Name: index_flows_template_srcaddrport_dstaddrport; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
---
-
-CREATE INDEX index_flows_template_srcaddrport_dstaddrport ON flows_template USING btree (src_addr, src_port, dst_addr, dst_port);
-
+CREATE INDEX index_flows_ifindexin_timestamp_agent ON flows USING btree (if_index_in, flow_timestamp, agent_addr);
 
 --
--- Name: index_flows_template_srcport_agent_timestamp_ifindexin; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
+-- Name: index_flows_proto_agent_timestamp_dstport_ifindexin; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE INDEX index_flows_template_srcport_agent_timestamp_ifindexin ON flows_template USING btree (src_port, agent_addr, flow_timestamp, if_index_in);
+CREATE INDEX index_flows_proto_agent_timestamp_dstport_ifindexin ON flows USING btree (protocol, agent_addr, flow_timestamp, dst_port, if_index_in);
+
+--
+-- Name: index_flows_proto_agent_timestamp_srcport_ifindexin; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
+--
+
+CREATE INDEX index_flows_proto_agent_timestamp_srcport_ifindexin ON flows USING btree (protocol, agent_addr, flow_timestamp, src_port, if_index_in);
+
+--
+-- Name: index_flows_src_addr; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
+--
+
+CREATE INDEX index_flows_src_addr ON flows USING btree (src_addr);
 
 
 --
--- Name: index_flows_template_timestamp; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
+-- Name: index_flows_src_port; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
 --
 
-CREATE INDEX index_flows_template_timestamp ON flows_template USING btree (flow_timestamp);
+CREATE INDEX index_flows_src_port ON flows USING btree (src_port);
 
+
+--
+-- Name: index_flows_srcaddr_agent_timestamp_ifindexin; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
+--
+
+CREATE INDEX index_flows_srcaddr_agent_timestamp_ifindexin ON flows USING btree (src_addr, agent_addr, flow_timestamp, if_index_in);
+
+--
+-- Name: index_flows_srcaddrport_dstaddrport; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
+--
+
+CREATE INDEX index_flows_srcaddrport_dstaddrport ON flows USING btree (src_addr, src_port, dst_addr, dst_port);
+
+
+--
+-- Name: index_flows_srcport_agent_timestamp_ifindexin; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
+--
+
+CREATE INDEX index_flows_srcport_agent_timestamp_ifindexin ON flows USING btree (src_port, agent_addr, flow_timestamp, if_index_in);
+
+--
+-- Name: index_flows_timestamp; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
+--
+
+CREATE INDEX index_flows_timestamp ON flows USING btree (flow_timestamp);
 
 --
 -- Name: index_groups_members_device_addr; Type: INDEX; Schema: public; Owner: nfdb_admin; Tablespace: 
@@ -737,15 +628,6 @@ CREATE INDEX index_services_custom_port ON services_custom USING btree (port);
 CREATE INDEX index_services_default_port ON services_default USING btree (port);
 
 
---
--- Name: insert_flows_trigger; Type: TRIGGER; Schema: public; Owner: nfdb_admin
---
-
-CREATE TRIGGER insert_flows_trigger
-    BEFORE INSERT ON flows_template
-    FOR EACH ROW
-    EXECUTE PROCEDURE flows_insert_trigger();
-
 
 --
 -- Name: public; Type: ACL; Schema: -; Owner: postgres
@@ -755,6 +637,14 @@ REVOKE ALL ON SCHEMA public FROM PUBLIC;
 REVOKE ALL ON SCHEMA public FROM postgres;
 GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
+
+GRANT ALL ON SCHEMA flows TO postgres;
+GRANT ALL ON SCHEMA flows TO PUBLIC;
+
+
+
+GRANT SELECT ON TABLE flows TO nfdb_user;
+
 
 
 --
@@ -768,13 +658,13 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE devices TO nfdb_user;
 
 
 --
--- Name: flows_template; Type: ACL; Schema: public; Owner: nfdb_admin
+-- Name: flows; Type: ACL; Schema: public; Owner: nfdb_admin
 --
 
-REVOKE ALL ON TABLE flows_template FROM PUBLIC;
-REVOKE ALL ON TABLE flows_template FROM nfdb_admin;
-GRANT ALL ON TABLE flows_template TO nfdb_admin;
-GRANT SELECT,INSERT,UPDATE ON TABLE flows_template TO nfdb_user;
+REVOKE ALL ON TABLE flows FROM PUBLIC;
+REVOKE ALL ON TABLE flows FROM nfdb_admin;
+GRANT ALL ON TABLE flows TO nfdb_admin;
+GRANT SELECT,INSERT,UPDATE ON TABLE flows TO nfdb_user;
 
 
 --
@@ -1253,7 +1143,10 @@ INSERT INTO protocols_default (name, number) VALUES ('sctp', 132);
 INSERT INTO protocols_default (name, number) VALUES ('fc', 133);
 
 
---
--- PostgreSQL database dump complete
---
+\connect nfdb postgres
 
+
+ALTER TABLE flows OWNER TO nfdb_super;
+--
+-- nfdb load complete
+--

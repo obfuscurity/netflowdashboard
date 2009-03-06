@@ -22,7 +22,7 @@ sub gather {
 	my $protocols_info = _get_protocols(dbh => $dbh);
 	for my $direction qw( src dst ) {
 		my $query = "SELECT SUM(flow_octets) as bytes, ${direction}_port, protocol, agent_addr ";
-		$query   .= "FROM flows_template ";
+		$query   .= "FROM flows ";
 		$query   .= "WHERE ${direction}_port < 1024 ";
 		$query   .= "AND agent_addr=? ";
 		$query   .= "AND flow_timestamp >= ? AND flow_timestamp < ? ";
@@ -72,7 +72,7 @@ sub _get_bandwidth {
 	my $dbh = $args{'dbh'};
 	my $cgi = $args{'cgi'};
 	my $query = "SELECT SUM(flow_octets) as bytes ";
-	$query   .= "FROM flows_template ";
+	$query   .= "FROM flows ";
 	$query   .= "WHERE agent_addr=? ";
 	$query   .= "AND flow_timestamp >= ? AND flow_timestamp < ? ";
 	$query   .= "AND (if_index_in=? OR if_index_out=?)";

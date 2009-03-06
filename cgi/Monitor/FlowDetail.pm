@@ -14,7 +14,7 @@ sub gather {
 	my $cgi = $args{'cgi'};
 	my @flowdetails;
 	my $query = "SELECT * ";
-	$query   .= "FROM flows_template ";
+	$query   .= "FROM flows ";
 	$query   .= "WHERE src_addr=? ";
 	$query   .= "AND src_port=? ";
 	$query   .= "AND dst_addr=? ";

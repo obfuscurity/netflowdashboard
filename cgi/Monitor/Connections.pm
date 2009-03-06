@@ -20,7 +20,7 @@ sub gather {
 	$query   .= "SUM(flow_octets) as bytes, ";
 	$query   .= "SUM(flow_packets) as packets, ";
 	$query   .= "(SUM(flow_octets) / SUM(flow_packets)) as bytes_per_packet ";
-	$query   .= "FROM flows_template ";
+	$query   .= "FROM flows ";
 	$query   .= "WHERE agent_addr=? ";
 	$query   .= "AND flow_timestamp >= ? AND flow_timestamp < ? ";
 	$query   .= "AND (if_index_in=? OR if_index_out=?) ";
@@ -61,7 +61,7 @@ sub _get_bandwidth {
     my $dbh = $args{'dbh'};
     my $cgi = $args{'cgi'};
     my $query = "SELECT SUM(flow_octets) as bytes ";
-    $query   .= "FROM flows_template ";
+    $query   .= "FROM flows ";
     $query   .= "WHERE agent_addr=? ";
     $query   .= "AND flow_timestamp >= ? AND flow_timestamp < ? ";
     $query   .= "AND (if_index_in=? OR if_index_out=?)";

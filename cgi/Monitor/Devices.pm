@@ -21,7 +21,7 @@ sub gather {
 		my $query = "SELECT DISTINCT if_index_${if}, agent_addr, ";
 		$query   .= "SUM(flow_packets) as packets, ";
 		$query   .= "SUM(flow_octets) as bytes ";
-		$query   .= "FROM flows_template ";
+		$query   .= "FROM flows ";
 		$query   .= "WHERE flow_timestamp >= ? AND flow_timestamp < ? ";
 		$query   .= "AND agent_addr in (\'" . join("\', \'", @{$device_addrs}) . "\') " if ($cgi->param('g'));
 		$query   .= "GROUP BY agent_addr, if_index_${if}";
@@ -118,7 +118,7 @@ sub _get_sparklines {
 	my %args = @_;
 	my $dbh = $args{'dbh'};
 	my $time = $args{'time'};
-	my $query = "SELECT date_trunc('H', flow_timestamp) + (floor(extract('minute' FROM flow_timestamp) / (? * 5)) * (? * 5)) * '1 minute'::interval AS time, floor((sum(flow_octets) * 8) / 1000000 / ( ? * 300)) AS mbps FROM flows_template WHERE agent_addr=? AND flow_timestamp > current_timestamp - ? * '1 hour'::interval GROUP BY time ORDER BY time ASC";
+	my $query = "SELECT date_trunc('H', flow_timestamp) + (floor(extract('minute' FROM flow_timestamp) / (? * 5)) * (? * 5)) * '1 minute'::interval AS time, floor((sum(flow_octets) * 8) / 1000000 / ( ? * 300)) AS mbps FROM flows WHERE agent_addr=? AND flow_timestamp > current_timestamp - ? * '1 hour'::interval GROUP BY time ORDER BY time ASC";
 	my $sth = $dbh->prepare($query);
 	$sth->execute($time, $time, $time, $args{'device_addr'}, $time);
 	my @data;
